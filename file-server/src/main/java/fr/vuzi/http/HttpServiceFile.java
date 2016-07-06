@@ -16,6 +16,7 @@ import java.util.logging.Logger;
 public class HttpServiceFile implements IHttpService {
 
     // Test
+    // TODO: Use a database ? :)
     private Set<FileMetadata> files = new HashSet<>();
     private Map<String, FileChunk> chunks = new HashMap<>();
 
@@ -27,6 +28,8 @@ public class HttpServiceFile implements IHttpService {
 
     @Override
     public void serve(IHttpRequest request, IHttpResponse response) throws HttpException {
+        // TODO serve according to method :)
+
         logger.info("location => " + request.getLocation());
         logger.info("method => " + request.getMethod());
         for(Map.Entry<String, String> header : request.getHeaders().entrySet()) {
@@ -39,6 +42,10 @@ public class HttpServiceFile implements IHttpService {
         logger.info("FileCreation.name => " + fm.name);
         logger.info("FileCreation.path => " + fm.path);
         logger.info("FileCreation.size => " + fm.size);
+
+        // TODO :
+        // - check that file doesn't exist already
+        // - check that file information is coherent
 
         // List of chunks of the file
         List<FileChunk> chunkList = new ArrayList<>();
@@ -58,5 +65,8 @@ public class HttpServiceFile implements IHttpService {
         // Save the file
         fm.path = fm.path.replace('\\', '/');
         files.add(fm);
+
+        // Return the created file (+chunks)
+        response.setBody(new Gson().toJson(fm).getBytes());
     }
 }

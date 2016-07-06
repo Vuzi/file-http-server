@@ -42,11 +42,11 @@ public class Main {
             if(!f.isFile())
                 throw new FileNotFoundException();
 
-            FileMetadata fc = new FileMetadata();
-            fc.name = fdest.getName();
-            fc.path = fdest.getPath();
-            fc.size = f.length();
-            fc.sha1 = Utils.createSha1String(f);
+            FileMetadata fm = new FileMetadata();
+            fm.name = fdest.getName();
+            fm.path = fdest.getPath();
+            fm.size = f.length();
+            fm.sha1 = Utils.createSha1String(f);
 
             URL url = new URL("http://localhost:8081/test/exemple");
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
@@ -58,10 +58,7 @@ public class Main {
 
             // Write body
             OutputStream outputStream = con.getOutputStream();
-            //System.out.println(new Gson().toJson(fc));
-            //System.out.println(Arrays.toString(new Gson().toJson(fc).getBytes()));
-            outputStream.write(new Gson().toJson(fc).getBytes());
-            outputStream.flush();
+            outputStream.write(new Gson().toJson(fm).getBytes());
             outputStream.close();
 
             int responseCode = con.getResponseCode();
@@ -69,7 +66,7 @@ public class Main {
 
             BufferedReader in = new BufferedReader(new InputStreamReader(con.getInputStream()));
             String inputLine;
-            StringBuffer response = new StringBuffer();
+            StringBuilder response = new StringBuilder();
 
             while ((inputLine = in.readLine()) != null) {
                 response.append(inputLine);
