@@ -1,2 +1,6 @@
+
+include ':file-common'
+project (":file-common").projectDir=file("../file-common")
+
 rootProject.name = 'file-client'
 

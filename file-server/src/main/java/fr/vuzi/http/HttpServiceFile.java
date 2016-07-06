@@ -2,28 +2,22 @@ package fr.vuzi.http;
 
 import com.google.gson.Gson;
 
+import fr.vuzi.file.FileChunk;
+import fr.vuzi.file.FileMetadata;
 import fr.vuzi.http.error.HttpException;
 import fr.vuzi.http.request.IHttpRequest;
 import fr.vuzi.http.request.IHttpResponse;
 import fr.vuzi.http.service.IHttpService;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class HttpServiceFile implements IHttpService {
 
-    public static class FileCreation {
-        public String name;
-        public String path;
-        public long size;
-    }
-
-    public static class FileCreationResponse {
-        public boolean error;
-        public String message;
-        public String[] chuncks;
-    }
+    // Test
+    private Set<FileMetadata> files = new HashSet<>();
+    private Map<String, FileChunk> chunks = new HashMap<>();
 
     private static Logger logger = Logger.getLogger(HttpServiceFile.class.getCanonicalName());
 
@@ -39,9 +33,30 @@ public class HttpServiceFile implements IHttpService {
             logger.info("header => " + header.getKey() + ":" + header.getValue());
         }
 
-        FileCreation fc = new Gson().fromJson(new String(request.getBody()), FileCreation.class);
-        logger.info("FileCreation.name => " + fc.name);
-        logger.info("FileCreation.path => " + fc.path);
-        logger.info("FileCreation.size => " + fc.size);
+        // Get the file metadata
+        FileMetadata fm = new Gson().fromJson(new String(request.getBody()), FileMetadata.class);
+
+        logger.info("FileCreation.name => " + fm.name);
+        logger.info("FileCreation.path => " + fm.path);
+        logger.info("FileCreation.size => " + fm.size);
+
+        // List of chunks of the file
+        List<FileChunk> chunkList = new ArrayList<>();
+
+        long size = fm.size;
+        while(size > 0) {
+            FileChunk chunk = new FileChunk();
+            chunk.id = UUID.randomUUID().toString();
+            chunk.size = size > CHUNCK_SIZE ? CHUNCK_SIZE : size;
+
+            chunkList.add(chunk);
+            size -= CHUNCK_SIZE;
+        }
+
+        fm.chunks = chunkList.toArray(new FileChunk[chunkList.size()]);
+
+        // Save the file
+        fm.path = fm.path.replace('\\', '/');
+        files.add(fm);
     }
 }

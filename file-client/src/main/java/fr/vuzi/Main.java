@@ -1,6 +1,8 @@
 package fr.vuzi;
 
 import com.google.gson.Gson;
+import fr.vuzi.file.FileMetadata;
+import fr.vuzi.file.Utils;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -32,37 +34,32 @@ public class Main {
         }
     }
 
-    public static class FileCreation {
-        public String name;
-        public String path;
-        public long size;
-    }
-
-    public static class FileCreationResponse {
-        public boolean error;
-        public String message;
-        public String[] chuncks;
-    }
-
     public static void uploadFile(String path, String dest) {
         try {
-            FileCreation fc = new FileCreation();
-            fc.name = "myFile.txt";
-            fc.path = "/path/to/";
-            fc.size = 10000;
+            File f = new File(path);
+            File fdest = new File(dest);
+
+            if(!f.isFile())
+                throw new FileNotFoundException();
+
+            FileMetadata fc = new FileMetadata();
+            fc.name = fdest.getName();
+            fc.path = fdest.getPath();
+            fc.size = f.length();
+            fc.sha1 = Utils.createSha1String(f);
 
             URL url = new URL("http://localhost:8081/test/exemple");
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
             con.setRequestProperty("Connection","Close");
-            con.setRequestMethod("POST");
+            con.setRequestMethod("PUT");
 
             con.setDoOutput(true);
 
             // Write body
             OutputStream outputStream = con.getOutputStream();
-            System.out.println(new Gson().toJson(fc));
-            System.out.println(Arrays.toString(new Gson().toJson(fc).getBytes()));
+            //System.out.println(new Gson().toJson(fc));
+            //System.out.println(Arrays.toString(new Gson().toJson(fc).getBytes()));
             outputStream.write(new Gson().toJson(fc).getBytes());
             outputStream.flush();
             outputStream.close();
@@ -96,6 +93,8 @@ public class Main {
             logger.log(Level.SEVERE, "File not found", e);
         } catch (IOException e) {
             logger.log(Level.SEVERE, "IO Exception", e);
+        } catch (Exception e) {
+            logger.log(Level.SEVERE, "Exception", e);
         }
     }
 
