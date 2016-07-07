@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import fr.vuzi.file.FileChunk;
 import fr.vuzi.file.FileMetadata;
 import fr.vuzi.http.error.HttpException;
+import fr.vuzi.http.proxy.HttpServiceProxy;
 import fr.vuzi.http.request.IHttpRequest;
 import fr.vuzi.http.request.IHttpResponse;
 import fr.vuzi.http.service.IHttpService;
@@ -13,18 +14,20 @@ import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
 
-public class HttpServiceFile implements IHttpService {
+public class HttpServiceFile extends HttpServiceProxy {
 
-    // Test
+    // Tests
     // TODO: Use a database ? :)
     private Set<FileMetadata> files = new HashSet<>();
     private Map<String, FileChunk> chunks = new HashMap<>();
 
     private static Logger logger = Logger.getLogger(HttpServiceFile.class.getCanonicalName());
 
-    public HttpServiceFile(Map<String, String> parameters) throws IOException {}
+    public HttpServiceFile(Map<String, String> parameters) throws Exception {
+        super(parameters);
+    }
 
-    private static final int CHUNCK_SIZE = 4096;
+    private static final int CHUNK_SIZE = 4096;
 
     @Override
     public void serve(IHttpRequest request, IHttpResponse response) throws HttpException {
@@ -54,10 +57,10 @@ public class HttpServiceFile implements IHttpService {
         while(size > 0) {
             FileChunk chunk = new FileChunk();
             chunk.id = UUID.randomUUID().toString();
-            chunk.size = size > CHUNCK_SIZE ? CHUNCK_SIZE : size;
+            chunk.size = size > CHUNK_SIZE ? CHUNK_SIZE : size;
 
             chunkList.add(chunk);
-            size -= CHUNCK_SIZE;
+            size -= CHUNK_SIZE;
         }
 
         fm.chunks = chunkList.toArray(new FileChunk[chunkList.size()]);

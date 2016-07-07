@@ -11,6 +11,7 @@ repositories {
 
 dependencies {
     compile project(":http-server")
+    compile project(":proxy-server")
     compile project(":thread-pool")
     compile project(":file-common")
     compile group: 'com.google.code.gson', name: 'gson', version: '2.7'

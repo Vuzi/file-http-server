@@ -48,7 +48,7 @@ public class Main {
             fm.size = f.length();
             fm.sha1 = Utils.createSha1String(f);
 
-            URL url = new URL("http://localhost:8081/test/exemple");
+            URL url = new URL("http://localhost:8081/meta/test/example");
             HttpURLConnection con = (HttpURLConnection) url.openConnection();
 
             con.setRequestProperty("Connection","Close");
