@@ -31,14 +31,38 @@ public class HttpServiceFile extends HttpServiceProxy {
 
     @Override
     public void serve(IHttpRequest request, IHttpResponse response) throws HttpException {
-        // TODO serve according to method :)
-
         logger.info("location => " + request.getLocation());
         logger.info("method => " + request.getMethod());
         for(Map.Entry<String, String> header : request.getHeaders().entrySet()) {
             logger.info("header => " + header.getKey() + ":" + header.getValue());
         }
 
+        // TODO: generic message and responses
+
+        switch (request.getMethod()) {
+            case "PUT":
+                createFile(request, response);
+                break;
+            case "POST":
+                editFile(request, response);
+                break;
+            case "DELETE":
+                deleteFile(request, response);
+                break;
+            default:
+            throw new HttpException(405, "Method not allowed");
+        }
+    }
+
+    private void deleteFile(IHttpRequest request, IHttpResponse response) {
+        // TODO
+    }
+
+    private void editFile(IHttpRequest request, IHttpResponse response) {
+        // TODO
+    }
+
+    private void createFile(IHttpRequest request, IHttpResponse response) {
         // Get the file metadata
         FileMetadata fm = new Gson().fromJson(new String(request.getBody()), FileMetadata.class);
 

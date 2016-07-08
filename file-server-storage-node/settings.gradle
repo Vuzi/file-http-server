@@ -1,0 +1,14 @@
+include ':http-server'
+project (":http-server").projectDir=file("../../distributed-http-server/http-server")
+
+include ':thread-pool'
+project (":thread-pool").projectDir=file("../../distributed-http-server/thread-pool")
+
+include ':proxy-server'
+project (":proxy-server").projectDir=file("../../distributed-http-server/proxy-server")
+
+include ':file-common'
+project (":file-common").projectDir=file("../file-common")
+
+rootProject.name = 'file-server-storage-node'
+
