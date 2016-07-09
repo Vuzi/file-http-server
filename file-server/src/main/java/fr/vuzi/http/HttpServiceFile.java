@@ -55,7 +55,23 @@ public class HttpServiceFile extends HttpServiceProxy {
     }
 
     private void deleteFile(IHttpRequest request, IHttpResponse response) {
-        // TODO
+        // Get the file metadata
+        FileMetadata fm = new Gson().fromJson(new String(request.getBody()), FileMetadata.class);
+
+        logger.info("FileCreation.name => " + fm.name);
+        logger.info("FileCreation.path => " + fm.path);
+        logger.info("FileCreation.size => " + fm.size);
+
+        // TODO get file from database
+
+        for(FileChunk fc : fm.chunks) {
+            for(String storageNode : fc.storageNodes) {
+                // TODO delete file on node
+            }
+            // TODO delete chunk
+        }
+
+        // TODO delete file
     }
 
     private void editFile(IHttpRequest request, IHttpResponse response) {
