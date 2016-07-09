@@ -1,4 +1,4 @@
-package fr.vuzi;
+package fr.vuzi.http;
 
 
 import fr.vuzi.file.Utils;
@@ -35,6 +35,7 @@ public class HttpServiceFileStorage implements IHttpService {
             throw new Exception("No directory specified");
 
         dir = new File(dirname);
+        dir.mkdir();
 
         if(!dir.exists() || !dir.isDirectory())
             throw new Exception("Directory doe not exist");
@@ -72,7 +73,7 @@ public class HttpServiceFileStorage implements IHttpService {
         // Get location (location should be an UUID)
         String location = request.getParameter("location");
 
-        if(!uuidRegex.matcher(location).matches())
+        if(location == null || !uuidRegex.matcher(location).matches())
             throw new HttpException(404, "Chunk not found (invalid UUID)");
 
         return new File(dir, location);

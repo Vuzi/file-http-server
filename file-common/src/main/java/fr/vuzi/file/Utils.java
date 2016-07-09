@@ -25,4 +25,14 @@ public class Utils {
         return Hex.encodeHexString(createSha1(f));
     }
 
+    public static byte[] createSha1(byte[] bytes) throws Exception {
+        MessageDigest digest = MessageDigest.getInstance("SHA-1");
+        digest.update(bytes);
+
+        return digest.digest();
+    }
+
+    public static String createSha1String(byte[] bytes) throws Exception {
+        return Hex.encodeHexString(createSha1(bytes));
+    }
 }

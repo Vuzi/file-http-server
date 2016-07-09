@@ -1,5 +1,7 @@
 package fr.vuzi.file;
 
+import java.util.Arrays;
+
 public class FileMetadata {
 
     /**
@@ -47,4 +49,14 @@ public class FileMetadata {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "FileMetadata{" +
+                "name='" + name + '\'' +
+                ", path='" + path + '\'' +
+                ", size=" + size +
+                ", chunks=" + Arrays.toString(chunks) +
+                ", sha1='" + sha1 + '\'' +
+                '}';
+    }
 }

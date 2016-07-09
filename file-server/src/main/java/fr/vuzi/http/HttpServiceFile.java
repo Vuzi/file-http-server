@@ -10,22 +10,19 @@ import fr.vuzi.http.request.IHttpRequest;
 import fr.vuzi.http.request.IHttpResponse;
 import fr.vuzi.http.service.IHttpService;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
 
-public class HttpServiceFile extends HttpServiceProxy {
+public class HttpServiceFile implements IHttpService {
 
     // Tests
     // TODO: Use a database ? :)
-    private Set<FileMetadata> files = new HashSet<>();
+    private Map<String, FileMetadata> files = new HashMap<>();
     private Map<String, FileChunk> chunks = new HashMap<>();
 
     private static Logger logger = Logger.getLogger(HttpServiceFile.class.getCanonicalName());
 
-    public HttpServiceFile(Map<String, String> parameters) throws Exception {
-        super(parameters);
-    }
+    public HttpServiceFile(Map<String, String> parameters) throws Exception {}
 
     private static final int CHUNK_SIZE = 4096;
 
@@ -49,35 +46,71 @@ public class HttpServiceFile extends HttpServiceProxy {
             case "DELETE":
                 deleteFile(request, response);
                 break;
+            case "GET":
+                getFile(request, response);
             default:
             throw new HttpException(405, "Method not allowed");
         }
     }
 
-    private void deleteFile(IHttpRequest request, IHttpResponse response) {
+    /**
+     * Return the metadata of a file
+     * @param request The request
+     * @param response The response
+     * @throws HttpException
+     */
+    private void getFile(IHttpRequest request, IHttpResponse response) throws HttpException {
         // Get the file metadata
-        FileMetadata fm = new Gson().fromJson(new String(request.getBody()), FileMetadata.class);
+        // TODO get file from database
+        FileMetadata fm = files.get(request.getParameter("location"));
+
+        if(fm == null)
+            throw new HttpException(404, "File not found");
+
+        // Return the file (+chunks)
+        response.setBody(new Gson().toJson(fm).getBytes());
+        response.setStatus(200);
+    }
+
+    /**
+     * Delete a file (data + metadata)
+     * @param request The request
+     * @param response The response
+     * @throws HttpException
+     */
+    private void deleteFile(IHttpRequest request, IHttpResponse response) throws HttpException {
+        // Get the file metadata
+        // TODO get file from database
+        FileMetadata fm = files.get(request.getParameter("location"));  //new Gson().fromJson(new String(request.getBody()), FileMetadata.class);
+
+        if(fm == null)
+            throw new HttpException(404, "File not found");
 
         logger.info("FileCreation.name => " + fm.name);
         logger.info("FileCreation.path => " + fm.path);
         logger.info("FileCreation.size => " + fm.size);
 
-        // TODO get file from database
-
         for(FileChunk fc : fm.chunks) {
             for(String storageNode : fc.storageNodes) {
                 // TODO delete file on node
             }
-            // TODO delete chunk
+            chunks.remove(fc.id);
         }
+        files.remove(fm.path + "/" + fm.name);
 
-        // TODO delete file
+        // Return positive response
+        response.setStatus(200);
     }
 
     private void editFile(IHttpRequest request, IHttpResponse response) {
         // TODO
     }
 
+    /**
+     * Create a file (only metadata)
+     * @param request The request
+     * @param response The response
+     */
     private void createFile(IHttpRequest request, IHttpResponse response) {
         // Get the file metadata
         FileMetadata fm = new Gson().fromJson(new String(request.getBody()), FileMetadata.class);
@@ -107,9 +140,10 @@ public class HttpServiceFile extends HttpServiceProxy {
 
         // Save the file
         fm.path = fm.path.replace('\\', '/');
-        files.add(fm);
+        files.put(fm.path + "/" + fm.name, fm);
 
         // Return the created file (+chunks)
         response.setBody(new Gson().toJson(fm).getBytes());
+        response.setStatus(200);
     }
 }
