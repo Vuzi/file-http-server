@@ -17,8 +17,8 @@ public class HttpServiceFile implements IHttpService {
 
     // Tests
     // TODO: Use a database ? :)
-    private Map<String, FileMetadata> files = new HashMap<>();
-    private Map<String, FileChunk> chunks = new HashMap<>();
+    private static Map<String, FileMetadata> files = new HashMap<>();
+    private static Map<String, FileChunk> chunks = new HashMap<>();
 
     private static Logger logger = Logger.getLogger(HttpServiceFile.class.getCanonicalName());
 
@@ -48,6 +48,7 @@ public class HttpServiceFile implements IHttpService {
                 break;
             case "GET":
                 getFile(request, response);
+                break;
             default:
             throw new HttpException(405, "Method not allowed");
         }
