@@ -34,24 +34,92 @@ public class HttpServiceFile implements IHttpService {
             logger.info("header => " + header.getKey() + ":" + header.getValue());
         }
 
-        // TODO: generic message and responses
-
-        switch (request.getMethod()) {
-            case "PUT":
-                createFile(request, response);
+        switch(request.getParameter("type").toUpperCase()) {
+            // File metadata
+            case "FILE":
+                switch (request.getMethod()) {
+                    case "PUT":
+                        createFile(request, response);
+                        break;
+                    case "POST":
+                        editFile(request, response);
+                        break;
+                    case "DELETE":
+                        deleteFile(request, response);
+                        break;
+                    case "GET":
+                        getFile(request, response);
+                        break;
+                    default:
+                        throw new HttpException(405, "Method not allowed");
+                }
                 break;
-            case "POST":
-                editFile(request, response);
-                break;
-            case "DELETE":
-                deleteFile(request, response);
-                break;
-            case "GET":
-                getFile(request, response);
+            // Notice from storage node
+            case "CHUNK":
+                switch (request.getMethod()) {
+                    case "PUT":
+                        creationNoticeChunk(request, response);
+                        break;
+                    case "DELETE":
+                        deletionNoticeChunk(request, response);
+                        break;
+                    default:
+                        throw new HttpException(405, "Method not allowed");
+                }
                 break;
             default:
-            throw new HttpException(405, "Method not allowed");
+                throw new HttpException(405, "Method not allowed");
         }
+    }
+
+    /**
+     * Register a chunk creation
+     * @param request The request
+     * @param response The response
+     * @throws HttpException
+     */
+    private void creationNoticeChunk(IHttpRequest request, IHttpResponse response) throws HttpException {
+        // TODO get file from database
+        FileChunk chunk = chunks.get(request.getParameter("location"));
+
+        if(chunk == null)
+            throw new HttpException(404, "Chunk not found");
+
+        String hostname = request.getHeader("Hostname");
+
+        if(hostname == null)
+            throw new HttpException(400, "No hostname specified");
+
+        if(hostname.indexOf(':') < 0)
+            hostname = hostname + ":80";
+
+        // TODO update in database
+        chunk.storageNodes.add(hostname);
+    }
+
+    /**
+     * Register a chunk deletion
+     * @param request The request
+     * @param response The response
+     * @throws HttpException
+     */
+    private void deletionNoticeChunk(IHttpRequest request, IHttpResponse response) throws HttpException {
+        // TODO get file from database
+        FileChunk chunk = chunks.get(request.getParameter("location"));
+
+        if(chunk == null)
+            throw new HttpException(404, "Chunk not found");
+
+        String hostname = request.getHeader("Hostname");
+
+        if(hostname == null)
+            throw new HttpException(400, "No hostname specified");
+
+        if(hostname.indexOf(':') < 0)
+            hostname = hostname + ":80";
+
+        // TODO delete in database
+        chunk.storageNodes.remove(hostname);
     }
 
     /**
@@ -132,8 +200,11 @@ public class HttpServiceFile implements IHttpService {
             FileChunk chunk = new FileChunk();
             chunk.id = UUID.randomUUID().toString();
             chunk.size = size > CHUNK_SIZE ? CHUNK_SIZE : size;
+            chunk.storageNodes = new ArrayList<>();
 
             chunkList.add(chunk);
+            chunks.put(chunk.id, chunk);
+
             size -= CHUNK_SIZE;
         }
 

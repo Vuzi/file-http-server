@@ -1,16 +1,16 @@
 package fr.vuzi.http;
 
-
 import fr.vuzi.file.Utils;
 import fr.vuzi.http.error.HttpException;
+import fr.vuzi.http.impl.HttpRequest;
+import fr.vuzi.http.impl.HttpResponse;
+import fr.vuzi.http.request.HttpUtils;
 import fr.vuzi.http.request.IHttpRequest;
 import fr.vuzi.http.request.IHttpResponse;
 import fr.vuzi.http.service.IHttpService;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.net.Socket;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -23,6 +23,15 @@ import java.util.regex.Pattern;
 public class HttpServiceFileStorage implements IHttpService {
 
     private static Logger logger = Logger.getLogger(HttpServiceFileStorage.class.getCanonicalName());
+
+    // File server address and port
+    private static final String SERVER_NAME = "localhost";
+    private static final int SERVER_PORT = 8081;
+
+    // TODO get from conf ?
+    // Local server name and port
+    private static final String HOSTNAME = "localhost";
+    private static final int HOSTNAME_PORT = 8081;
 
     private File dir;
     private Pattern uuidRegex = Pattern.compile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}$");
@@ -64,26 +73,87 @@ public class HttpServiceFileStorage implements IHttpService {
     }
 
     /**
-     * Send the chunk file object from the request. The chunk name should be a valid UUID
-     * @param request The HTTP request
+     * Send a notice to the file server
+     * @param id The chunk id
+     * @param method The method, either PUT or DELETE
+     * @throws HttpException
+     */
+    private void sendNotice(String id, String method) throws HttpException {
+        try {
+            // Prepare request
+            HttpRequest request = new HttpRequest();
+            request.setMethod(method);
+            request.setLocation("/meta/chunk/" + id);
+            request.getHeaders().put("Hostname", HOSTNAME + ":" + HOSTNAME_PORT);
+            request.getHeaders().put("Content-Length", "0");
+            request.setBody(new byte[0]);
+
+            // Send request
+            Socket socket = new Socket(SERVER_NAME, SERVER_PORT);
+
+            OutputStream outputStream = socket.getOutputStream();
+            HttpUtils.RequestSender.send(request, outputStream);
+
+            // Prepare response
+            HttpResponse response = new HttpResponse();
+
+            // Read response
+            HttpUtils.ResponseParser.parse(response, socket.getInputStream());
+
+            logger.info("Response received");
+            logger.info("Code => " + response.getStatus() + " (" + response.getTextStatus() + ")");
+
+            if (response.getStatus() != 200)
+                throw new HttpException(500, "Failed to send a " + method + " notice (" + response.getStatus() + ")");
+        } catch (IOException e) {
+            throw new HttpException(500, "Failed to send a " + method + " deletion notice");
+        }
+    }
+
+    /**
+     * Send a creation notice
+     * @param id The chunk id
+     * @throws HttpException
+     */
+    private void sendCreationNotice(String id) throws HttpException {
+        sendNotice(id, "PUT");
+    }
+
+    /**
+     * Send a delete notice
+     * @param id The chunk id
+     * @throws HttpException
+     */
+    private void sendDeletionNotice(String id) throws HttpException {
+        sendNotice(id, "DELETE");
+    }
+
+    /**
+     * Send the chunk file object from the id. The chunk name should be a valid UUID
+     * @param id The id
      * @return The file
      * @throws HttpException
      */
-    private File getChunkFile(IHttpRequest request) throws HttpException {
-        // Get location (location should be an UUID)
-        String location = request.getParameter("location");
-
-        if(location == null || !uuidRegex.matcher(location).matches())
+    private File getChunkFile(String id) throws HttpException {
+        // Id should be an UUID
+        if(id == null || !uuidRegex.matcher(id).matches())
             throw new HttpException(404, "Chunk not found (invalid UUID)");
 
-        return new File(dir, location);
+        return new File(dir, id);
     }
 
+    /**
+     * Handle a chunk creation request
+     * @param request The request
+     * @param response The response
+     * @throws HttpException
+     */
     private void serveCreateChunk(IHttpRequest request, IHttpResponse response) throws HttpException {
-        logger.info("chunk creation -> " + request.getParameter("location"));
+        String id = request.getParameter("location");
+        logger.info("chunk creation -> " + id);
 
         // Create file from location
-        File chunk = getChunkFile(request);
+        File chunk = getChunkFile(id);
 
         try {
             if(!chunk.createNewFile())
@@ -113,17 +183,24 @@ public class HttpServiceFileStorage implements IHttpService {
         }
 
         // Send to the proxy the chunk creation notice
-        // TODO metadataServer
+        sendCreationNotice(id);
 
         // Return positive response
         response.setStatus(200);
     }
 
+    /**
+     * Handle a chunk deletion request
+     * @param request The request
+     * @param response The response
+     * @throws HttpException
+     */
     private void serveDeleteChunk(IHttpRequest request, IHttpResponse response) throws HttpException {
-        logger.info("chunk deletion -> " + request.getParameter("location"));
+        String id = request.getParameter("location");
+        logger.info("chunk creation -> " + id);
 
         // Get file from location
-        File chunk = getChunkFile(request);
+        File chunk = getChunkFile(id);
 
         if(!chunk.isFile())
             throw new HttpException(404, "Chunk deletion failed (file not found)");
@@ -145,11 +222,19 @@ public class HttpServiceFileStorage implements IHttpService {
         response.setStatus(200);
     }
 
+    /**
+     * Handle a chunk request
+     * @param request The request
+     * @param response The response
+     * @throws HttpException
+     */
     private void serveSendChunk(IHttpRequest request, IHttpResponse response) throws HttpException {
-        logger.info("chunk get -> " + request.getParameter("location"));
+        String id = request.getParameter("location");
+        logger.info("chunk creation -> " + id);
+
 
         // Get file from location
-        File chunk = getChunkFile(request);
+        File chunk = getChunkFile(id);
 
         // Write content to response body
         try {

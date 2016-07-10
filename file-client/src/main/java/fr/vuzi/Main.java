@@ -51,7 +51,7 @@ public class Main {
             // Prepare request
             HttpRequest request = new HttpRequest();
             request.setMethod("GET");
-            request.setLocation("/meta/" + path.replace('\\', '/'));
+            request.setLocation("/meta/file/" + path.replace('\\', '/'));
             request.getHeaders().put("Content-Length", "0"); // No body
             request.setBody(new byte[0]);
 
@@ -155,7 +155,7 @@ public class Main {
             // Prepare request
             HttpRequest request = new HttpRequest();
             request.setMethod("PUT");
-            request.setLocation("/meta/" + fdest.toString().replace('\\', '/'));
+            request.setLocation("/meta/file/" + fdest.toString().replace('\\', '/'));
             request.setBody(new Gson().toJson(fm).getBytes());
             request.getHeaders().put("Content-Length", request.getBody().length + "");
 
